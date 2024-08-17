@@ -1,3 +1,7 @@
+from fastapi.security import APIKeyHeader
+from fastapi import Security, HTTPException
+from starlette.status import HTTP_403_FORBIDDEN
+
 import importlib.metadata
 import os
 from os import path
@@ -12,6 +16,16 @@ from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from whisper import tokenizer
 
+API_KEY = os.getenv("API_KEY")
+api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+
+
+async def get_api_key(api_key_header: str = Security(api_key_header)):
+    if api_key_header == API_KEY:
+        return api_key_header
+    raise HTTPException(status_code=HTTP_403_FORBIDDEN, detail="Could not validate credentials")
+
+
 ASR_ENGINE = os.getenv("ASR_ENGINE", "openai_whisper")
 if ASR_ENGINE == "faster_whisper":
     from .faster_whisper.core import language_detection, transcribe
@@ -24,7 +38,7 @@ LANGUAGE_CODES = sorted(tokenizer.LANGUAGES.keys())
 projectMetadata = importlib.metadata.metadata("whisper-asr-webservice")
 app = FastAPI(
     title=projectMetadata["Name"].title().replace("-", " "),
-    description=projectMetadata["Summary"],
+    description=projectMetadata["Summary"] + "\n\nThis API requires an API key for authentication.",
     version=projectMetadata["Version"],
     contact={"url": projectMetadata["Home-page"]},
     swagger_ui_parameters={"defaultModelsExpandDepth": -1},
@@ -54,6 +68,7 @@ async def index():
 
 @app.post("/asr", tags=["Endpoints"])
 async def asr(
+    api_key: str = Security(get_api_key),
     audio_file: UploadFile = File(...),  # noqa: B008
     encode: bool = Query(default=True, description="Encode audio first through ffmpeg"),
     task: Union[str, None] = Query(default="transcribe", enum=["transcribe", "translate"]),
@@ -84,6 +99,7 @@ async def asr(
 
 @app.post("/detect-language", tags=["Endpoints"])
 async def detect_language(
+    api_key: str = Security(get_api_key),
     audio_file: UploadFile = File(...),  # noqa: B008
     encode: bool = Query(default=True, description="Encode audio first through FFmpeg"),
 ):
