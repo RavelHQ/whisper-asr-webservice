@@ -1,5 +1,7 @@
 FROM debian:bookworm-slim AS ffmpeg
 
+LABEL org.opencontainers.image.description="Whisper ASR Webservice (Requires API_KEY to be set)"
+
 RUN export DEBIAN_FRONTEND=noninteractive \
     && apt-get -qq update \
     && apt-get -qq install --no-install-recommends \
@@ -78,6 +80,9 @@ COPY --from=swagger-ui /usr/share/nginx/html/swagger-ui-bundle.js swagger-ui-ass
 
 RUN poetry install
 RUN $POETRY_VENV/bin/pip install torch==1.13.1+cu117 -f https://download.pytorch.org/whl/torch
+
+ENV API_KEY=${API_KEY}
+
 
 EXPOSE 9000
 
