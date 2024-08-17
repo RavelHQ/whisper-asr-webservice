@@ -87,9 +87,12 @@ async def asr(
     result = transcribe(
         load_audio(audio_file.file, encode), task, language, initial_prompt, vad_filter, word_timestamps, output
     )
+
+    media_type = "application/json" if output == "json" else "text/plain"
+
     return StreamingResponse(
         result,
-        media_type="text/plain",
+        media_type=media_type,
         headers={
             "Asr-Engine": ASR_ENGINE,
             "Content-Disposition": f'attachment; filename="{quote(audio_file.filename)}.{output}"',
