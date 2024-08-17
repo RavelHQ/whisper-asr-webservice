@@ -82,7 +82,7 @@ async def asr(
         ),
     ] = False,
     word_timestamps: bool = Query(default=False, description="Word level timestamps"),
-    output: Union[str, None] = Query(default="txt", enum=["txt", "vtt", "srt", "tsv", "json"]),
+    output: Union[str, None] = Query(default="json", enum=["txt", "vtt", "srt", "tsv", "json"]),
 ):
     result = transcribe(
         load_audio(audio_file.file, encode), task, language, initial_prompt, vad_filter, word_timestamps, output
