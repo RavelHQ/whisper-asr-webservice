@@ -8,6 +8,8 @@ from os import path
 from typing import Annotated, BinaryIO, Union
 from urllib.parse import quote
 
+import torch
+
 import ffmpeg
 import numpy as np
 from fastapi import FastAPI, File, Query, UploadFile, applications
@@ -64,6 +66,15 @@ if path.exists(assets_path + "/swagger-ui.css") and path.exists(assets_path + "/
 @app.get("/", response_class=RedirectResponse, include_in_schema=False)
 async def index():
     return "/docs"
+
+
+@app.get("/info", include_in_schema=False)
+async def info():
+    isCuda = torch.cuda.is_available()
+    return {
+        "ASR_ENGINE": ASR_ENGINE,
+        "CUDA": isCuda,
+    }
 
 
 @app.post("/asr", tags=["Endpoints"])
