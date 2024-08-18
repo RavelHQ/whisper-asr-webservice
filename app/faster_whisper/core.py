@@ -2,8 +2,6 @@ import os
 from io import StringIO
 from threading import Lock
 from typing import BinaryIO, Union
-import random
-import concurrent.futures
 
 import torch
 import whisper
@@ -13,7 +11,6 @@ from .utils import ResultWriter, WriteJSON, WriteSRT, WriteTSV, WriteTXT, WriteV
 
 model_name = os.getenv("ASR_MODEL", "base")
 model_path = os.getenv("ASR_MODEL_PATH", os.path.join(os.path.expanduser("~"), ".cache", "whisper"))
-number_of_models = int(os.getenv("ASR_NUM_MODELS", 5))
 
 # More about available quantization levels is here:
 #   https://opennmt.net/CTranslate2/quantization.html
@@ -24,24 +21,11 @@ else:
     device = "cpu"
     model_quantization = os.getenv("ASR_QUANTIZATION", "int8")
 
-models = [
-    WhisperModel(
-        model_size_or_path=model_name, device=device, compute_type=model_quantization, download_root=model_path
-    )
-    for _ in range(number_of_models)
-]
+model = WhisperModel(
+    model_size_or_path=model_name, device=device, compute_type=model_quantization, download_root=model_path
+)
 
-model_locks = [Lock() for _ in range(number_of_models)]
-
-
-def transcribe_with_model(model, audio, options_dict):
-    segments = []
-    text = ""
-    segment_generator, info = model.transcribe(audio, beam_size=5, **options_dict)
-    for segment in segment_generator:
-        segments.append(segment)
-        text = text + segment.text
-    return {"language": options_dict.get("language", info.language), "segments": segments, "text": text}
+model_lock = Lock()
 
 
 def transcribe(
@@ -50,7 +34,7 @@ def transcribe(
     language: Union[str, None],
     initial_prompt: Union[str, None],
     vad_filter: Union[bool, None],
-    word_timestamps: Union[str, None],
+    word_timestamps: Union[bool, None],
     output,
 ):
     options_dict = {"task": task}
@@ -62,14 +46,14 @@ def transcribe(
         options_dict["vad_filter"] = True
     if word_timestamps:
         options_dict["word_timestamps"] = True
-
-    with concurrent.futures.ThreadPoolExecutor(max_workers=number_of_models) as executor:
-        future_to_model = {
-            executor.submit(transcribe_with_model, model, audio, options_dict): model for model in models
-        }
-        for future in concurrent.futures.as_completed(future_to_model):
-            result = future.result()
-            break  # We only need the result from the first completed task
+    with model_lock:
+        segments = []
+        text = ""
+        segment_generator, info = model.transcribe(audio, beam_size=5, **options_dict)
+        for segment in segment_generator:
+            segments.append(segment)
+            text = text + segment.text
+        result = {"language": options_dict.get("language", info.language), "segments": segments, "text": text}
 
     output_file = StringIO()
     write_result(result, output_file, output)
@@ -79,7 +63,15 @@ def transcribe(
 
 
 def language_detection(audio):
-    raise NotImplementedError("Language detection is not implemented yet!")
+    # load audio and pad/trim it to fit 30 seconds
+    audio = whisper.pad_or_trim(audio)
+
+    # detect the spoken language
+    with model_lock:
+        segments, info = model.transcribe(audio, beam_size=5)
+        detected_lang_code = info.language
+
+    return detected_lang_code
 
 
 def write_result(result: dict, file: BinaryIO, output: Union[str, None]):
