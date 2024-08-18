@@ -108,7 +108,7 @@ async def asr(
         ),
     ] = False,
     word_timestamps: bool = Query(default=False, description="Word level timestamps"),
-    output: Union[str, None] = Query(default="json", enum=["txt", "vtt", "srt", "tsv", "json"]),
+    output: Union[str, None] = Query(default="twofold-json", enum=["txt", "vtt", "srt", "tsv", "json", "twofold-json"]),
 ):
     transcriber = getTranscriber()
 
