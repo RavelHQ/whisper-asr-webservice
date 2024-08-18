@@ -1,10 +1,9 @@
-name: Deploy to Azure VM
+name: Build and Deploy to Azure VM
 
 on:
   push:
     branches:
       - main
-
   workflow_dispatch:
 
 concurrency:
@@ -18,9 +17,8 @@ env:
   VM_USER: azureuser
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
-
     steps:
       - uses: actions/checkout@v2
 
@@ -39,6 +37,10 @@ jobs:
           docker build -f Dockerfile.gpu -t ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} .
           docker push ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
       - name: Deploy to Azure VM
         uses: appleboy/ssh-action@master
         with:
