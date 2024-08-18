@@ -3,6 +3,7 @@ from io import StringIO
 from threading import Lock
 from typing import BinaryIO, Union
 import random
+import concurrent.futures
 
 import torch
 import whisper
@@ -33,12 +34,14 @@ models = [
 model_locks = [Lock() for _ in range(number_of_models)]
 
 
-def getModel():
-    model_index = random.randint(0, number_of_models - 1)
-    model = models[model_index]
-    model_lock = model_locks[model_index]
-
-    return model, model_lock
+def transcribe_with_model(model, audio, options_dict):
+    segments = []
+    text = ""
+    segment_generator, info = model.transcribe(audio, beam_size=5, **options_dict)
+    for segment in segment_generator:
+        segments.append(segment)
+        text = text + segment.text
+    return {"language": options_dict.get("language", info.language), "segments": segments, "text": text}
 
 
 def transcribe(
@@ -47,11 +50,9 @@ def transcribe(
     language: Union[str, None],
     initial_prompt: Union[str, None],
     vad_filter: Union[bool, None],
-    word_timestamps: Union[bool, None],
+    word_timestamps: Union[str, None],
     output,
 ):
-    model, model_lock = getModel()
-
     options_dict = {"task": task}
     if language:
         options_dict["language"] = language
@@ -61,14 +62,14 @@ def transcribe(
         options_dict["vad_filter"] = True
     if word_timestamps:
         options_dict["word_timestamps"] = True
-    with model_lock:
-        segments = []
-        text = ""
-        segment_generator, info = model.transcribe(audio, beam_size=5, **options_dict)
-        for segment in segment_generator:
-            segments.append(segment)
-            text = text + segment.text
-        result = {"language": options_dict.get("language", info.language), "segments": segments, "text": text}
+
+    with concurrent.futures.ThreadPoolExecutor(max_workers=number_of_models) as executor:
+        future_to_model = {
+            executor.submit(transcribe_with_model, model, audio, options_dict): model for model in models
+        }
+        for future in concurrent.futures.as_completed(future_to_model):
+            result = future.result()
+            break  # We only need the result from the first completed task
 
     output_file = StringIO()
     write_result(result, output_file, output)
@@ -78,17 +79,7 @@ def transcribe(
 
 
 def language_detection(audio):
-    model, model_lock = getModel()
-
-    # load audio and pad/trim it to fit 30 seconds
-    audio = whisper.pad_or_trim(audio)
-
-    # detect the spoken language
-    with model_lock:
-        segments, info = model.transcribe(audio, beam_size=5)
-        detected_lang_code = info.language
-
-    return detected_lang_code
+    raise NotImplementedError("Language detection is not implemented yet!")
 
 
 def write_result(result: dict, file: BinaryIO, output: Union[str, None]):
