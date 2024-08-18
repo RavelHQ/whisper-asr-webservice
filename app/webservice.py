@@ -77,9 +77,9 @@ async def info():
     return {
         "ASR_ENGINE": ASR_ENGINE,
         "CUDA": isCuda,
-        number_of_models: number_of_models,
-        model_name: model_name,
-        model_quantization: model_quantization,
+        "number_of_models": number_of_models,
+        "model_name": model_name,
+        "model_quantization": model_quantization,
     }
 
 
