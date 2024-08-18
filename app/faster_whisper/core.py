@@ -23,10 +23,10 @@ model_quantization = os.getenv("ASR_QUANTIZATION", "float16")
 
 
 class WhisperTranscriber:
-    def __init__(self, core: int):
+    def __init__(self):
         self.model = WhisperModel(
             model_size_or_path=model_name,
-            device=f"cuda:{core}",
+            device=device,
             compute_type=model_quantization,
             download_root=model_path,
         )

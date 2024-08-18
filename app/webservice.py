@@ -40,7 +40,7 @@ ASR_ENGINE = os.getenv("ASR_ENGINE", "openai_whisper")
 
 from .faster_whisper.core import WhisperTranscriber
 
-transcribers = [WhisperTranscriber(core=(i % number_of_cores)) for i in range(number_of_models)]
+transcribers = [WhisperTranscriber() for _ in range(number_of_models)]
 
 # Add a counter for round-robin selection
 transcriber_counter = 0
