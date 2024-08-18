@@ -20,7 +20,8 @@ from whisper import tokenizer
 
 API_KEY = os.getenv("API_KEY")
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
-number_of_models = int(os.getenv("ASR_NUM_MODELS", 5))
+number_of_models = int(os.getenv("ASR_NUM_MODELS", 4))
+number_of_cores = int(os.getenv("CUDA_NUM_CORES", 4))
 model_name = os.getenv("ASR_MODEL", "base")
 model_quantization = os.getenv("ASR_QUANTIZATION", "float32")
 
@@ -39,7 +40,7 @@ ASR_ENGINE = os.getenv("ASR_ENGINE", "openai_whisper")
 
 from .faster_whisper.core import WhisperTranscriber
 
-transcribers = [WhisperTranscriber() for _ in range(number_of_models)]
+transcribers = [WhisperTranscriber(core=(i % number_of_cores)) for i in range(number_of_models)]
 
 # Add a counter for round-robin selection
 transcriber_counter = 0
@@ -87,6 +88,7 @@ async def info():
         "number_of_models": number_of_models,
         "model_name": model_name,
         "model_quantization": model_quantization,
+        "number_of_cores": number_of_cores,
     }
 
 
