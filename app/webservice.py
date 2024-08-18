@@ -20,7 +20,7 @@ from whisper import tokenizer
 
 API_KEY = os.getenv("API_KEY")
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
-number_of_models = os.getenv("ASR_NUM_MODELS", 5)
+number_of_models = int(os.getenv("ASR_NUM_MODELS", 5))
 model_name = os.getenv("ASR_MODEL", "base")
 model_quantization = os.getenv("ASR_QUANTIZATION", "float32")
 
