@@ -50,7 +50,8 @@ jobs:
             docker pull ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
             docker stop whisper-container || true
             docker rm whisper-container || true
-            docker run -d --name whisper-container -p 9000:9000 \
+            docker run -d --name whisper-container \
+              -p 127.0.0.1:9000:9000 \
               -e API_KEY=${{ secrets.API_KEY }} \
               -e ASR_ENGINE=faster_whisper \
               -e ASR_MODEL=distil-large-v3 \
