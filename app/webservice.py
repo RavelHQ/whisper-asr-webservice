@@ -32,10 +32,17 @@ async def get_api_key(api_key_header: str = Security(api_key_header)):
 
 
 ASR_ENGINE = os.getenv("ASR_ENGINE", "openai_whisper")
-if ASR_ENGINE == "faster_whisper":
-    from .faster_whisper.core import language_detection, transcribe
-else:
-    from .openai_whisper.core import language_detection, transcribe
+# if ASR_ENGINE == "faster_whisper":
+#     from .faster_whisper.core import language_detection, transcribe
+# else:
+#     from .openai_whisper.core import language_detection, transcribe
+
+from .faster_whisper.core import WhisperTranscriber
+
+transcribers = [WhisperTranscriber() for _ in range(number_of_models)]
+
+# Add a counter for round-robin selection
+transcriber_counter = 0
 
 SAMPLE_RATE = 16000
 LANGUAGE_CODES = sorted(tokenizer.LANGUAGES.keys())
@@ -101,7 +108,9 @@ async def asr(
     word_timestamps: bool = Query(default=False, description="Word level timestamps"),
     output: Union[str, None] = Query(default="json", enum=["txt", "vtt", "srt", "tsv", "json"]),
 ):
-    result = transcribe(
+    transcriber = getTranscriber()
+
+    result = transcriber.transcribe(
         load_audio(audio_file.file, encode), task, language, initial_prompt, vad_filter, word_timestamps, output
     )
 
@@ -117,13 +126,25 @@ async def asr(
     )
 
 
+def getTranscriber():
+    global transcriber_counter
+
+    # Select the next transcriber in a round-robin fashion
+    transcriber = transcribers[transcriber_counter]
+    transcriber_counter = (transcriber_counter + 1) % number_of_models
+
+    return transcriber
+
+
 @app.post("/detect-language", tags=["Endpoints"])
 async def detect_language(
     api_key: str = Security(get_api_key),
     audio_file: UploadFile = File(...),  # noqa: B008
     encode: bool = Query(default=True, description="Encode audio first through FFmpeg"),
 ):
-    detected_lang_code = language_detection(load_audio(audio_file.file, encode))
+    transcriber = getTranscriber()
+
+    detected_lang_code = transcriber.language_detection(load_audio(audio_file.file, encode))
     return {"detected_language": tokenizer.LANGUAGES[detected_lang_code], "language_code": detected_lang_code}
 
 
