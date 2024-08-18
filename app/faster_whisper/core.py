@@ -2,6 +2,7 @@ import os
 from io import StringIO
 from threading import Lock
 from typing import BinaryIO, Union
+import random
 
 import torch
 import whisper
@@ -21,11 +22,16 @@ else:
     device = "cpu"
     model_quantization = os.getenv("ASR_QUANTIZATION", "int8")
 
-model = WhisperModel(
-    model_size_or_path=model_name, device=device, compute_type=model_quantization, download_root=model_path
-)
+NUM_PARALLEL_REQUESTS = 5
 
-model_lock = Lock()
+models = [
+    WhisperModel(
+        model_size_or_path=model_name, device=device, compute_type=model_quantization, download_root=model_path
+    )
+    for _ in range(NUM_PARALLEL_REQUESTS)
+]
+
+model_locks = [Lock() for _ in range(NUM_PARALLEL_REQUESTS)]
 
 
 def transcribe(
@@ -37,6 +43,10 @@ def transcribe(
     word_timestamps: Union[bool, None],
     output,
 ):
+    model_index = random.randint(0, NUM_PARALLEL_REQUESTS - 1)
+    model = models[model_index]
+    model_lock = model_locks[model_index]
+
     options_dict = {"task": task}
     if language:
         options_dict["language"] = language
@@ -63,6 +73,10 @@ def transcribe(
 
 
 def language_detection(audio):
+    model_index = random.randint(0, NUM_PARALLEL_REQUESTS - 1)
+    model = models[model_index]
+    model_lock = model_locks[model_index]
+
     # load audio and pad/trim it to fit 30 seconds
     audio = whisper.pad_or_trim(audio)
 
