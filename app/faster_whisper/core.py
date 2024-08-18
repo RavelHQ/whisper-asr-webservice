@@ -9,29 +9,23 @@ from faster_whisper import WhisperModel
 
 from .utils import ResultWriter, WriteJSON, WriteSRT, WriteTSV, WriteTXT, WriteVTT
 
-model_name = os.getenv("ASR_MODEL", "base")
+model_name = os.getenv("ASR_MODEL", "distil-large-v3")
 model_path = os.getenv("ASR_MODEL_PATH", os.path.join(os.path.expanduser("~"), ".cache", "whisper"))
+
+
+if torch.cuda.is_available() == False:
+    raise Exception("CUDA is not available. Please install CUDA and cuDNN.")
 
 # More about available quantization levels is here:
 #   https://opennmt.net/CTranslate2/quantization.html
-if torch.cuda.is_available():
-    device = "cuda"
-    model_quantization = os.getenv("ASR_QUANTIZATION", "float32")
-else:
-    device = "cpu"
-    model_quantization = os.getenv("ASR_QUANTIZATION", "int8")
-
-# model = WhisperModel(
-#     model_size_or_path=model_name, device=device, compute_type=model_quantization, download_root=model_path
-# )
-
-# model_lock = Lock()
+device = "cuda"
+model_quantization = os.getenv("ASR_QUANTIZATION", "float16")
 
 
 class WhisperTranscriber:
-    def __init__(self):
+    def __init__(self, core: int):
         self.model = WhisperModel(
-            model_size_or_path=model_name, device=device, compute_type=model_quantization, download_root=model_path
+            model_size_or_path=model_name, device=device=f"cuda:{core}", compute_type=model_quantization, download_root=model_path
         )
         self.model_lock = Lock()
 
