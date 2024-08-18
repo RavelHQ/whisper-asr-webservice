@@ -12,7 +12,7 @@ from .utils import ResultWriter, WriteJSON, WriteSRT, WriteTSV, WriteTXT, WriteV
 
 model_name = os.getenv("ASR_MODEL", "base")
 model_path = os.getenv("ASR_MODEL_PATH", os.path.join(os.path.expanduser("~"), ".cache", "whisper"))
-number_of_models = os.getenv("ASR_NUM_MODELS", 5)
+number_of_models = int(os.getenv("ASR_NUM_MODELS", 5))
 
 # More about available quantization levels is here:
 #   https://opennmt.net/CTranslate2/quantization.html
