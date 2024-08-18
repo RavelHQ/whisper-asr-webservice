@@ -20,6 +20,9 @@ from whisper import tokenizer
 
 API_KEY = os.getenv("API_KEY")
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
+number_of_models = os.getenv("ASR_NUM_MODELS", 5)
+model_name = os.getenv("ASR_MODEL", "base")
+model_quantization = os.getenv("ASR_QUANTIZATION", "float32")
 
 
 async def get_api_key(api_key_header: str = Security(api_key_header)):
@@ -74,6 +77,9 @@ async def info():
     return {
         "ASR_ENGINE": ASR_ENGINE,
         "CUDA": isCuda,
+        number_of_models: number_of_models,
+        model_name: model_name,
+        model_quantization: model_quantization,
     }
 
 
