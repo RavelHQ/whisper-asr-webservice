@@ -56,6 +56,6 @@ jobs:
               -e ASR_ENGINE=faster_whisper \
               -e ASR_MODEL=distil-large-v3 \
               -e ASR_QUANTIZATION=float16 \
-              -e ASR_NUM_MODELS=8 \
+              -e ASR_NUM_MODELS=7 \
               --gpus all \
               ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
