@@ -12,6 +12,7 @@ from .utils import ResultWriter, WriteJSON, WriteSRT, WriteTSV, WriteTXT, WriteV
 
 model_name = os.getenv("ASR_MODEL", "base")
 model_path = os.getenv("ASR_MODEL_PATH", os.path.join(os.path.expanduser("~"), ".cache", "whisper"))
+number_of_models = os.getenv("ASR_NUM_MODELS", 5)
 
 # More about available quantization levels is here:
 #   https://opennmt.net/CTranslate2/quantization.html
@@ -22,16 +23,22 @@ else:
     device = "cpu"
     model_quantization = os.getenv("ASR_QUANTIZATION", "int8")
 
-NUM_PARALLEL_REQUESTS = 5
-
 models = [
     WhisperModel(
         model_size_or_path=model_name, device=device, compute_type=model_quantization, download_root=model_path
     )
-    for _ in range(NUM_PARALLEL_REQUESTS)
+    for _ in range(number_of_models)
 ]
 
-model_locks = [Lock() for _ in range(NUM_PARALLEL_REQUESTS)]
+model_locks = [Lock() for _ in range(number_of_models)]
+
+
+def getModel():
+    model_index = random.randint(0, number_of_models - 1)
+    model = models[model_index]
+    model_lock = model_locks[model_index]
+
+    return model, model_lock
 
 
 def transcribe(
@@ -43,9 +50,7 @@ def transcribe(
     word_timestamps: Union[bool, None],
     output,
 ):
-    model_index = random.randint(0, NUM_PARALLEL_REQUESTS - 1)
-    model = models[model_index]
-    model_lock = model_locks[model_index]
+    model, model_lock = getModel()
 
     options_dict = {"task": task}
     if language:
@@ -73,9 +78,7 @@ def transcribe(
 
 
 def language_detection(audio):
-    model_index = random.randint(0, NUM_PARALLEL_REQUESTS - 1)
-    model = models[model_index]
-    model_lock = model_locks[model_index]
+    model, model_lock = getModel()
 
     # load audio and pad/trim it to fit 30 seconds
     audio = whisper.pad_or_trim(audio)
