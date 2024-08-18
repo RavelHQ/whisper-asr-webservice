@@ -85,3 +85,32 @@ class WriteJSON(ResultWriter):
 
     def write_result(self, result: dict, file: TextIO):
         json.dump(result, file)
+
+
+# https://github.com/SYSTRAN/faster-whisper/blob/master/faster_whisper/transcribe.py#L47C1-L58C39
+class WriteTwofoldJSON(ResultWriter):
+    """
+    Write a transcript to a file in JSON format containing segments with:
+    - start time in integer milliseconds
+    - end time in integer milliseconds
+    - transcript text
+    - temperature
+    - no_speech_probability
+    """
+
+    extension: str = "twofold-json"
+
+    def write_result(self, result: dict, file: TextIO):
+        json_output = {
+            "segments": [
+                {
+                    "start": round(1000 * segment.start),
+                    "end": round(1000 * segment.end),
+                    "text": segment.text.strip(),
+                    "temperature": segment.temperature,
+                    "no_speech_prob": segment.no_speech_prob,
+                }
+                for segment in result["segments"]
+            ]
+        }
+        json.dump(json_output, file)

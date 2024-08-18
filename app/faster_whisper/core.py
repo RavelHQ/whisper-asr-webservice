@@ -7,7 +7,7 @@ import torch
 import whisper
 from faster_whisper import WhisperModel
 
-from .utils import ResultWriter, WriteJSON, WriteSRT, WriteTSV, WriteTXT, WriteVTT
+from .utils import ResultWriter, WriteJSON, WriteSRT, WriteTSV, WriteTXT, WriteVTT, WriteTwofoldJSON
 
 model_name = os.getenv("ASR_MODEL", "distil-large-v3")
 model_path = os.getenv("ASR_MODEL_PATH", os.path.join(os.path.expanduser("~"), ".cache", "whisper"))
@@ -89,5 +89,7 @@ class WhisperTranscriber:
             WriteJSON(ResultWriter).write_result(result, file=file)
         elif output == "txt":
             WriteTXT(ResultWriter).write_result(result, file=file)
+        elif output == "twofold-json":
+            WriteTwofoldJSON(ResultWriter).write_result(result, file=file)
         else:
             return "Please select an output method!"
