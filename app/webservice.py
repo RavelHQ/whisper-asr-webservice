@@ -100,6 +100,7 @@ async def asr(
     task: Union[str, None] = Query(default="transcribe", enum=["transcribe", "translate"]),
     language: Union[str, None] = Query(default=None, enum=LANGUAGE_CODES),
     initial_prompt: Union[str, None] = Query(default=None),
+    temperature: Union[float, None] = Query(default=None, description="Sampling temperature"),
     vad_filter: Annotated[
         bool | None,
         Query(
@@ -113,7 +114,14 @@ async def asr(
     transcriber = getTranscriber()
 
     result = transcriber.transcribe(
-        load_audio(audio_file.file, encode), task, language, initial_prompt, vad_filter, word_timestamps, output
+        load_audio(audio_file.file, encode),
+        task,
+        language,
+        initial_prompt,
+        vad_filter,
+        word_timestamps,
+        temperature,
+        output,
     )
 
     media_type = "application/json" if output == "json" else "text/plain"
