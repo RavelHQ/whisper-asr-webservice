@@ -40,9 +40,10 @@ class WhisperTranscriber:
         initial_prompt: Union[str, None],
         vad_filter: Union[bool, None],
         word_timestamps: Union[bool, None],
+        temperature: Union[float, None],
         output,
     ):
-        options_dict = {"task": task, "temperature": 0.2}
+        options_dict = {"task": task}
         if language:
             options_dict["language"] = language
         if initial_prompt:
@@ -51,6 +52,9 @@ class WhisperTranscriber:
             options_dict["vad_filter"] = True
         if word_timestamps:
             options_dict["word_timestamps"] = True
+        if temperature:
+            options_dict["temperature"] = temperature
+
         with self.model_lock:
             segments = []
             text = ""
