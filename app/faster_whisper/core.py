@@ -42,7 +42,7 @@ class WhisperTranscriber:
         word_timestamps: Union[bool, None],
         output,
     ):
-        options_dict = {"task": task}
+        options_dict = {"task": task, "temperature": 0.2}
         if language:
             options_dict["language"] = language
         if initial_prompt:
