@@ -17,13 +17,13 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from whisper import tokenizer
-from .utils import get_env_or_throw
+from app.utils import get_env_or_throw
 
 from .faster_whisper.core import language_detection, transcribe, model_name, model_quantization
 
 API_KEY = get_env_or_throw("API_KEY")
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
-workers = os.getenv("WORKERS")
+# workers = os.getenv("WORKERS")
 
 
 async def get_api_key(api_key_header: str = Security(api_key_header)):
@@ -82,7 +82,7 @@ async def info():
         "CUDA": isCuda,
         "model_name": model_name,
         "model_quantization": model_quantization,
-        "workers": workers,
+        # "workers": workers,
     }
 
 
