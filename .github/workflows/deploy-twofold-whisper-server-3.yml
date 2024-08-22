@@ -1,9 +1,6 @@
-name: Build and Deploy to Azure VM
+name: twofold-whisper-server-3
 
 on:
-  push:
-    branches:
-      - main
   workflow_dispatch:
 
 concurrency:
@@ -12,8 +9,8 @@ concurrency:
 
 env:
   ACR_NAME: twofoldacr
-  IMAGE_NAME: whisper-asr-webservice
-  VM_IP: "172.206.249.96"
+  IMAGE_NAME: twofold-whisper-server-3
+  VM_IP: "20.51.186.194"
   VM_USER: azureuser
 
 jobs:
@@ -46,7 +43,7 @@ jobs:
         with:
           host: ${{ env.VM_IP }}
           username: ${{ env.VM_USER }}
-          key: ${{ secrets.VM_SSH_PRIVATE_KEY }}
+          key: ${{ secrets.WHISPER_SERVER_3_SSH_PRIVATE_KEY }}
           script: |
             docker login ${{ env.ACR_NAME }}.azurecr.io -u ${{ secrets.ACR_USERNAME }} -p ${{ secrets.ACR_PASSWORD }}
             docker pull ${{ env.ACR_NAME }}.azurecr.io/${{ env.IMAGE_NAME }}:${{ github.sha }}
