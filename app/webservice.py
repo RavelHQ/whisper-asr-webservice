@@ -17,13 +17,13 @@ from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.responses import RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from whisper import tokenizer
+from .utils import get_env_or_throw
 
-API_KEY = os.getenv("API_KEY")
+from .faster_whisper.core import language_detection, transcribe, model_name, model_quantization
+
+API_KEY = get_env_or_throw("API_KEY")
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
-number_of_models = int(os.getenv("ASR_NUM_MODELS", 4))
-number_of_cores = int(os.getenv("CUDA_NUM_CORES", 4))
-model_name = os.getenv("ASR_MODEL", "base")
-model_quantization = os.getenv("ASR_QUANTIZATION", "float32")
+workers = os.getenv("WORKERS")
 
 
 async def get_api_key(api_key_header: str = Security(api_key_header)):
@@ -39,11 +39,6 @@ ASR_ENGINE = os.getenv("ASR_ENGINE", "openai_whisper")
 #     from .openai_whisper.core import language_detection, transcribe
 
 from .faster_whisper.core import WhisperTranscriber
-
-transcribers = [WhisperTranscriber() for _ in range(number_of_models)]
-
-# Add a counter for round-robin selection
-transcriber_counter = 0
 
 SAMPLE_RATE = 16000
 LANGUAGE_CODES = sorted(tokenizer.LANGUAGES.keys())
@@ -85,10 +80,9 @@ async def info():
     return {
         "ASR_ENGINE": ASR_ENGINE,
         "CUDA": isCuda,
-        "number_of_models": number_of_models,
         "model_name": model_name,
         "model_quantization": model_quantization,
-        "number_of_cores": number_of_cores,
+        "workers": workers,
     }
 
 
@@ -111,9 +105,7 @@ async def asr(
     word_timestamps: bool = Query(default=False, description="Word level timestamps"),
     output: Union[str, None] = Query(default="twofold-json", enum=["txt", "vtt", "srt", "tsv", "json", "twofold-json"]),
 ):
-    transcriber = getTranscriber()
-
-    result = transcriber.transcribe(
+    result = transcribe(
         load_audio(audio_file.file, encode),
         task,
         language,
@@ -136,25 +128,13 @@ async def asr(
     )
 
 
-def getTranscriber():
-    global transcriber_counter
-
-    # Select the next transcriber in a round-robin fashion
-    transcriber = transcribers[transcriber_counter]
-    transcriber_counter = (transcriber_counter + 1) % number_of_models
-
-    return transcriber
-
-
 @app.post("/detect-language", tags=["Endpoints"])
 async def detect_language(
     api_key: str = Security(get_api_key),
     audio_file: UploadFile = File(...),  # noqa: B008
     encode: bool = Query(default=True, description="Encode audio first through FFmpeg"),
 ):
-    transcriber = getTranscriber()
-
-    detected_lang_code = transcriber.language_detection(load_audio(audio_file.file, encode))
+    detected_lang_code = language_detection(load_audio(audio_file.file, encode))
     return {"detected_language": tokenizer.LANGUAGES[detected_lang_code], "language_code": detected_lang_code}
 
 
