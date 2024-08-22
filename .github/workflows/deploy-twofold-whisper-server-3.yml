@@ -1,6 +1,10 @@
 name: twofold-whisper-server-3
 
 on:
+  push:
+    branches:
+      - main
+
   workflow_dispatch:
 
 concurrency:
