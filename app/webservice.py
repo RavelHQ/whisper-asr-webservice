@@ -38,8 +38,6 @@ ASR_ENGINE = os.getenv("ASR_ENGINE", "openai_whisper")
 # else:
 #     from .openai_whisper.core import language_detection, transcribe
 
-from .faster_whisper.core import WhisperTranscriber
-
 SAMPLE_RATE = 16000
 LANGUAGE_CODES = sorted(tokenizer.LANGUAGES.keys())
 
