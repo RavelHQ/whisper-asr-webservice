@@ -23,7 +23,7 @@ from .faster_whisper.core import language_detection, transcribe, model_name, mod
 
 API_KEY = get_env_or_throw("API_KEY")
 api_key_header = APIKeyHeader(name="X-API-Key", auto_error=False)
-# workers = os.getenv("WORKERS")
+workers = os.getenv("WORKERS")
 
 
 async def get_api_key(api_key_header: str = Security(api_key_header)):
@@ -80,7 +80,7 @@ async def info():
         "CUDA": isCuda,
         "model_name": model_name,
         "model_quantization": model_quantization,
-        # "workers": workers,
+        "workers": workers,
     }
 
 
