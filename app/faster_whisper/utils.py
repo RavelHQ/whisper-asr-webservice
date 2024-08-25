@@ -109,6 +109,7 @@ class WriteTwofoldJSON(ResultWriter):
                     "text": segment.text.strip(),
                     "temperature": segment.temperature,
                     "no_speech_prob": segment.no_speech_prob,
+                    "avg_logprob": segment.avg_logprob,
                 }
                 for segment in result["segments"]
             ]
