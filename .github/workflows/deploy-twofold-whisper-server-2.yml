@@ -9,7 +9,7 @@ concurrency:
 
 env:
   ACR_NAME: twofoldacr
-  IMAGE_NAME: whisper-asr-webservice
+  IMAGE_NAME: twofold-whisper-server-3
   VM_IP: "172.206.249.96"
   VM_USER: azureuser
 
