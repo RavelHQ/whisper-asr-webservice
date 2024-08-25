@@ -60,7 +60,7 @@ def transcribe(
         for segment in segment_generator:
             segments.append(segment)
             text = text + segment.text
-        result = {"language": options_dict.get("language", info.language), "segments": segments, "text": text}
+        result = {"language": info.language, "segments": segments, "text": text}
 
     output_file = StringIO()
     write_result(result, output_file, output)
