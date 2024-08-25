@@ -54,13 +54,26 @@ def transcribe(
         options_dict["temperature"] = temperature
 
     with model_lock:
-        segments = []
-        text = ""
         segment_generator, info = model.transcribe(audio, beam_size=5, **options_dict)
+
+        # Process segments to remove excessive consecutive duplicates
+        processed_segments = []
+        duplicate_count = 0
+        last_text = None
+
         for segment in segment_generator:
-            segments.append(segment)
-            text = text + segment.text
-        result = {"language": info.language, "segments": segments, "text": text, "duration": info.duration}
+            if segment.text == last_text:
+                duplicate_count += 1
+                if duplicate_count < 3:  # Allow up to 3 consecutive duplicates
+                    processed_segments.append(segment)
+            else:
+                duplicate_count = 0
+                processed_segments.append(segment)
+            last_text = segment.text
+
+        text = " ".join(segment.text for segment in processed_segments)
+
+        result = {"language": info.language, "segments": processed_segments, "text": text, "duration": info.duration}
 
     output_file = StringIO()
     write_result(result, output_file, output)
