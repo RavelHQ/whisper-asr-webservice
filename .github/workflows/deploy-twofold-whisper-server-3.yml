@@ -5,7 +5,7 @@ on:
 
 env:
   ACR_NAME: twofoldacr
-  IMAGE_NAME: twofold-whisper-server-3
+  IMAGE_NAME: twofold-whisper-server
   VM_IP: "20.51.186.194"
   VM_USER: azureuser
 
