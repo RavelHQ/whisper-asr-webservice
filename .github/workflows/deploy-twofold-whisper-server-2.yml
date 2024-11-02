@@ -27,6 +27,7 @@ jobs:
             docker stop whisper-container || true
             docker rm whisper-container || true
             docker run -d --name whisper-container \
+              --restart unless-stopped \
               -p 127.0.0.1:9000:9000 \
               -e API_KEY=${{ secrets.API_KEY }} \
               -e ASR_ENGINE=faster_whisper \
