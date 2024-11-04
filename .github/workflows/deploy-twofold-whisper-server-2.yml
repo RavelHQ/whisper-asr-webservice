@@ -3,7 +3,7 @@ name: twofold-whisper-server-2
 on:
   workflow_dispatch:
   schedule:
-    - cron: "0 7 * * *"
+    - cron: "20 8 * * *"
 
 env:
   ACR_NAME: twofoldacr
